@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,38 +13,34 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
-import co.com.mintic.tiendagenerica.IService.IUserService;
-import co.com.mintic.tiendagenerica.models.User;
+import co.com.mintic.tiendagenerica.IService.ISupplierService;
+import co.com.mintic.tiendagenerica.models.Supplier;
 import co.com.mintic.tiendagenerica.payload.response.MessageResponse;
-import co.com.mintic.tiendagenerica.repository.RoleRepository;
-import co.com.mintic.tiendagenerica.repository.UserRepository;
+import co.com.mintic.tiendagenerica.repository.SupplierRepository;
 import co.com.mintic.tiendagenerica.security.services.RefreshTokenService;
 
 @Controller
 @RequestMapping("/mintic/tiendagenerica/api")
 @CrossOrigin(origins = "*", maxAge = 3600L)
-public class UserController {
+public class SupplierController {
 	@Autowired
-	private IUserService service;
+	private ISupplierService service;
 
 	@Autowired
-	UserRepository userRepository;
+	SupplierRepository supplierRepository;
 
 	@Autowired
-	RoleRepository roleRepository;
-
-	@Autowired
-	PasswordEncoder encoder;
+	ISupplierService iSupplierService;
 
 	@Autowired
 	RefreshTokenService refreshTokenService;
 
 	@PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
 	@CrossOrigin(origins = "http://localhost:8090")
-	@RequestMapping(value = "/user/all", produces = { "application/JSON" })
+	@RequestMapping(value = "/supplier/all", produces = { "application/JSON" })
 	public ResponseEntity listar() {
 		try {
-			List<User> personas = service.listar();
+			List<Supplier> personas = supplierRepository.findAll();
 			return new ResponseEntity(personas, HttpStatus.OK);
 		} catch (Exception e) {
 			return new ResponseEntity(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -54,10 +49,10 @@ public class UserController {
 
 	@PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
 	@CrossOrigin(origins = "http://localhost:8090")
-	@RequestMapping(value = "/user/{id}", produces = { "application/JSON" })
-	public ResponseEntity getUser(@PathVariable("id") Long id) {
+	@RequestMapping(value = "/supplier/{id}", produces = { "application/JSON" })
+	public ResponseEntity getSupplier(@PathVariable("id") Long id) {
 		try {
-			return new ResponseEntity(service.listarPersonaId(id), HttpStatus.OK);
+			return new ResponseEntity(service.listarNitProveedor(id), HttpStatus.OK);
 		} catch (Exception e) {
 			return new ResponseEntity(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
@@ -65,15 +60,15 @@ public class UserController {
 
 	@PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN')")
 	@CrossOrigin(origins = "http://localhost:8090")
-	@RequestMapping(value = "/user/saveuser", method = RequestMethod.POST, consumes = {
+	@RequestMapping(value = "/supplier/savesupplier", method = RequestMethod.POST, consumes = {
 			"application/JSON" }, produces = { "application/JSON" })
-	public ResponseEntity save(@RequestBody User p) {
+	public ResponseEntity save(@RequestBody Supplier p) {
 		try {
-			if (service.save(p) == 0) {
-				return new ResponseEntity("El usuario " + p.getName() + " ya se encuentra registrado.",
+			if (iSupplierService.save(p) == 0) {
+				return new ResponseEntity("El proveedor " + p.getNombreProveedor() + " ya se encuentra registrado.",
 						HttpStatus.INTERNAL_SERVER_ERROR);
 			}
-			return new ResponseEntity(null, HttpStatus.OK);
+			return new ResponseEntity(p, HttpStatus.OK);
 		} catch (Exception e) {
 			return new ResponseEntity(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
@@ -81,13 +76,14 @@ public class UserController {
 
 	@PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN')")
 	@CrossOrigin(origins = "http://localhost:8090")
-	@RequestMapping(value = "/user/edituser", method = RequestMethod.PUT, produces = {
+	@RequestMapping(value = "/supplier/editsupplier", method = RequestMethod.PUT, produces = {
 			"application/JSON" }, consumes = { "application/JSON" })
-	public ResponseEntity editar(@RequestBody User user) {
-		if (userRepository.existsByEmail(user.getEmail())) {
-			// Create new user's account
-			userRepository.setUserInfoById(user.getName(), encoder.encode(user.getPassword()), user.getEmail());
-			return new ResponseEntity(new MessageResponse("Usuario modificado con exito"), HttpStatus.OK);
+	public ResponseEntity editar(@RequestBody Supplier supplier) {
+		if (supplierRepository.existsByNitProveedor(supplier.getNitProveedor())) {
+			// Create new supplier's account
+			supplierRepository.setSupplierInfo(supplier.getCiudadProveedor(), supplier.getDireccionProveedor(),
+					supplier.getNombreProveedor(), supplier.getTelefonoProveedor(), supplier.getNitProveedor());
+			return new ResponseEntity(new MessageResponse("Proveedor modificado con exito"), HttpStatus.OK);
 		} else {
 			return ResponseEntity.badRequest().body(new MessageResponse("Email no encontrado"));
 		}
@@ -95,17 +91,17 @@ public class UserController {
 
 	@PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN')")
 	@CrossOrigin(origins = "http://localhost:8090")
-	@RequestMapping(value = "/user/deleteuser/{id}", method = RequestMethod.DELETE, produces = { "application/JSON" })
+	@RequestMapping(value = "/supplier/deletesupplier/{id}", method = RequestMethod.DELETE, produces = {
+			"application/JSON" })
 	public ResponseEntity delete(@PathVariable("id") long id) {
 		try {
-			User user = new User();
-			user = userRepository.findById(id).get();
-			if (user != null) {
-				refreshTokenService.deleteByUserId(id);
-				userRepository.delete(user);
-				return new ResponseEntity(new MessageResponse("Usuario Eliminado con exito"), HttpStatus.OK);
+			Supplier sup = new Supplier();
+			sup = supplierRepository.getById(id);
+			if (sup != null) {
+				supplierRepository.delete(sup);
+				return new ResponseEntity(new MessageResponse("Proveedor Eliminado con exito"), HttpStatus.OK);
 			} else {
-				return new ResponseEntity(new MessageResponse("Usuario no encontrado"), HttpStatus.BAD_REQUEST);
+				return new ResponseEntity(new MessageResponse("Proveedor no encontrado"), HttpStatus.BAD_REQUEST);
 			}
 		} catch (Exception e) {
 			return new ResponseEntity(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
