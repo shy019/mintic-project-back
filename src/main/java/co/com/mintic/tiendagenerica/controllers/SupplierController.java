@@ -1,6 +1,8 @@
 package co.com.mintic.tiendagenerica.controllers;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -14,8 +16,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import co.com.mintic.tiendagenerica.IService.ISupplierService;
+import co.com.mintic.tiendagenerica.models.Product;
 import co.com.mintic.tiendagenerica.models.Supplier;
 import co.com.mintic.tiendagenerica.payload.response.MessageResponse;
+import co.com.mintic.tiendagenerica.repository.ProductRepository;
 import co.com.mintic.tiendagenerica.repository.SupplierRepository;
 import co.com.mintic.tiendagenerica.security.services.RefreshTokenService;
 
@@ -28,6 +32,9 @@ public class SupplierController {
 
 	@Autowired
 	SupplierRepository supplierRepository;
+
+	@Autowired
+	ProductRepository productRepository;
 
 	@Autowired
 	ISupplierService iSupplierService;
@@ -69,6 +76,23 @@ public class SupplierController {
 						HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 			return new ResponseEntity(p, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN') or hasRole('USER')")
+	@CrossOrigin(origins = "http://localhost:8090")
+	@RequestMapping(value = "/supplier/saveproducts", method = RequestMethod.POST, consumes = {
+			"application/JSON" }, produces = { "application/JSON" })
+	public ResponseEntity saveProducts(@RequestBody List<Product> p) {
+		try {
+			List<Product> productos = new ArrayList<>();
+			p.forEach((producto) -> {
+				productRepository.save(producto);
+				productos.add(producto);
+			});
+			return new ResponseEntity(productos, HttpStatus.OK);
 		} catch (Exception e) {
 			return new ResponseEntity(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}

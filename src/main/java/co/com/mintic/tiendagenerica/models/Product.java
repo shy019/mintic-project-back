@@ -1,5 +1,6 @@
 package co.com.mintic.tiendagenerica.models;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -23,7 +24,7 @@ public class Product {
 	private Double ivaCompra;
 
 	@NotBlank
-	@ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(optional = false, cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	@JoinColumn(name = "nitproveedor")
 	private Supplier nitProveedor;
 
