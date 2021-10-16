@@ -63,6 +63,18 @@ public class SaleController {
 
 	@PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
 	@CrossOrigin(origins = "http://localhost:8090")
+	@RequestMapping(value = "/sale/saleclient", produces = { "application/JSON" })
+	public ResponseEntity listarVentasClientes() {
+		try {
+			List<Object[]> ventasCliente = saleRepository.findClients();
+			return new ResponseEntity(ventasCliente, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
+	@CrossOrigin(origins = "http://localhost:8090")
 	@RequestMapping(value = "/sale/{id}", produces = { "application/JSON" })
 	public ResponseEntity getSale(@PathVariable("id") Long id) {
 		try {
