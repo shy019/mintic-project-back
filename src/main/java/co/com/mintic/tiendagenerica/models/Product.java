@@ -24,8 +24,8 @@ public class Product {
 	private Double ivaCompra;
 
 	@NotBlank
-    @ManyToOne(optional = false, cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-	@JoinColumn(name = "nitproveedor")
+    @ManyToOne(optional = false, cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+	@JoinColumn(name = "nitproveedor", referencedColumnName = "nitproveedor")
 	private Supplier nitProveedor;
 
 	@NotBlank

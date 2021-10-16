@@ -81,6 +81,29 @@ public class SupplierController {
 		}
 	}
 
+	@PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
+	@CrossOrigin(origins = "http://localhost:8090")
+	@RequestMapping(value = "/supplier/product/all", produces = { "application/JSON" })
+	public ResponseEntity listarProductos() {
+		try {
+			List<Product> productos = productRepository.findAll();
+			return new ResponseEntity(productos, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
+	@CrossOrigin(origins = "http://localhost:8090")
+	@RequestMapping(value = "/supplier/product/{id}", produces = { "application/JSON" })
+	public ResponseEntity getProduct(@PathVariable("id") Long id) {
+		try {
+			return new ResponseEntity(productRepository.findByCodigoProducto(id), HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+	
 	@PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN') or hasRole('USER')")
 	@CrossOrigin(origins = "http://localhost:8090")
 	@RequestMapping(value = "/supplier/saveproducts", method = RequestMethod.POST, consumes = {
